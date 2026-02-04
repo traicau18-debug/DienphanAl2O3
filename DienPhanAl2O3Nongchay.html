@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mô phỏng Điện phân Aluminium oxide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .bubble { transition: opacity 0.5s ease-out; }
+        @keyframes ping-slow {
+            0% { transform: scale(1); opacity: 1; }
+            75%, 100% { transform: scale(2); opacity: 0; }
+        }
+        .animate-ping-slow {
+            animation: ping-slow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+    <div class="max-w-5xl mx-auto p-4 md:p-8">
+        <!-- Main Card -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+            
+            <!-- Header Section -->
+            <header class="bg-slate-900 text-white p-6">
+                <div class="flex items-center gap-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-yellow-400 fill-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                    <h1 class="text-2xl md:text-3xl font-bold">Mô phỏng Điện phân Aluminium oxide</h1>
+                </div>
+                <div class="flex flex-col md:flex-row md:justify-between md:items-center mt-2 border-t border-slate-700 pt-2">
+                    <p class="text-slate-400 text-sm">Dựa trên Sơ đồ Hình 16.4 - SGK Hóa học</p>
+                    <p class="text-teal-400 text-sm font-medium italic">Thiết kế: Nguyễn Mạnh Hưng</p>
+                </div>
+            </header>
+
+            <div class="flex flex-col lg:flex-row p-6 gap-8">
+                
+                <!-- Main Simulation Area -->
+                <div class="flex-1 flex flex-col items-center">
+                    <div class="relative w-full aspect-[16/9] bg-slate-50 rounded-lg border border-dashed border-slate-300 p-4 overflow-hidden shadow-inner">
+                        
+                        <!-- SVG Simulation -->
+                        <svg id="simulation-svg" viewBox="0 0 800 450" class="w-full h-full drop-shadow-md">
+                            <!-- 1. Vỏ bể và Cathode (Than chì) -->
+                            <path d="M100 80 L100 350 Q100 380 130 380 L670 380 Q700 380 700 350 L700 80 L680 80 L680 340 L120 340 L120 80 Z" fill="#0f172a" />
+                            <text x="50" y="360" class="text-[14px] fill-slate-600 font-medium italic">Cathode (Cực âm) bằng than chì</text>
+                            <line x1="100" y1="360" x2="115" y2="350" stroke="#64748b" stroke-width="1" />
+
+                            <!-- 2. Lớp Aluminium nóng chảy -->
+                            <rect id="aluminum-layer" x="120" y="290" width="560" height="50" fill="#cbd5e1" class="transition-all duration-300" />
+                            
+                            <!-- 3. Hỗn hợp nóng chảy -->
+                            <rect id="electrolyte-layer" x="120" y="100" width="560" height="190" fill="#fde047" fill-opacity="0.6" class="transition-all duration-300" />
+
+                            <!-- 4. Anode bằng than chì -->
+                            <rect x="200" y="40" width="400" height="15" fill="#2dd4bf" />
+                            <!-- Generate Anodes -->
+                            <g id="anodes-group"></g>
+                            
+                            <!-- 5. Cửa tháo nhôm & Hiệu ứng tháo -->
+                            <g transform="translate(700, 320)">
+                                <path d="M0 0 L30 0 L30 20 L0 20" fill="none" stroke="#2dd4bf" stroke-width="4" />
+                            </g>
+                            <path id="drain-stream" d="M710 330 Q740 330 740 400" fill="none" stroke="#94a3b8" stroke-width="8" stroke-linecap="round" class="hidden animate-pulse" />
+
+                            <!-- Bọt khí group -->
+                            <g id="bubbles-container"></g>
+
+                            <!-- Nhãn chú thích -->
+                            <g class="text-[12px] font-medium fill-slate-700">
+                                <text x="110" y="30">Anode (Cực dương) bằng than chì</text>
+                                <line x1="180" y1="35" x2="220" y2="120" stroke="#94a3b8" stroke-dasharray="2" />
+                                
+                                <text x="560" y="55" class="font-bold">Hỗn hợp Al₂O₃ và Cryolite nóng chảy</text>
+                                <line x1="620" y1="65" x2="550" y2="150" stroke="#94a3b8" stroke-dasharray="2" />
+
+                                <text x="50" y="270">Aluminium nóng chảy</text>
+                                <text x="710" y="310">Cửa tháo nhôm</text>
+                            </g>
+
+                            <!-- Sparkles effect -->
+                            <g id="sparks" class="hidden">
+                                <circle cx="200" cy="47" r="3" fill="#fbbf24" class="animate-ping" />
+                                <circle cx="600" cy="47" r="3" fill="#fbbf24" class="animate-ping" />
+                            </g>
+                        </svg>
+
+                        <!-- Status Overlay -->
+                        <div id="status-overlay" class="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded shadow border border-yellow-200 text-xs font-bold hidden items-center gap-2">
+                            <span class="w-2 h-2 bg-yellow-400 rounded-full animate-ping"></span>
+                            ĐANG ĐIỆN PHÂN...
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div class="mt-6 flex flex-wrap justify-center gap-4">
+                        <button id="btn-toggle" class="flex items-center gap-2 px-6 py-3 rounded-full font-bold transition-all shadow-lg active:scale-95 bg-emerald-600 hover:bg-emerald-700 text-white">
+                            <span id="btn-toggle-icon">▶</span>
+                            <span id="btn-toggle-text">Bắt Đầu Điện Phân</span>
+                        </button>
+
+                        <button id="btn-tap" class="flex items-center gap-2 px-6 py-3 rounded-full bg-blue-600 hover:bg-blue-700 text-white font-bold transition-all shadow-lg active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed">
+                            <span id="btn-tap-icon">💧</span>
+                            Tháo Aluminium
+                        </button>
+
+                        <button id="btn-reset" class="p-3 rounded-full bg-slate-200 hover:bg-slate-300 text-slate-700 transition-all shadow-md active:rotate-180 duration-500" title="Làm mới">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Sidebar -->
+                <aside class="lg:w-80 flex flex-col gap-6">
+                    <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 shadow-sm">
+                        <h3 class="text-lg font-bold mb-3 flex items-center gap-2 border-b border-slate-200 pb-2 text-blue-700">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            Vai trò Cryolite
+                        </h3>
+                        <div class="text-sm space-y-2">
+                            <p class="font-semibold italic text-slate-700">Na<sub>3</sub>AlF<sub>6</sub> giúp:</p>
+                            <ul class="list-disc ml-4 space-y-2 text-slate-600">
+                                <li>Giảm nhiệt độ nóng chảy của Al<sub>2</sub>O<sub>3</sub>.</li>
+                                <li>Tăng độ dẫn điện của dung dịch.</li>
+                                <li>Tạo lớp ngăn nhôm không bị oxy hóa lại.</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div class="bg-slate-50 rounded-xl p-5 border border-slate-200 shadow-sm">
+                        <h3 class="text-lg font-bold mb-3 flex items-center gap-2 border-b border-slate-200 pb-2 text-yellow-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                            Phản ứng Hóa học
+                        </h3>
+                        <div class="space-y-4 text-sm">
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-emerald-600 mb-1">Tại Cathode (-)</p>
+                                <div class="bg-white p-2 rounded border border-slate-200 font-mono shadow-sm">
+                                    Al<sup>3+</sup> + 3e → Al
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-red-600 mb-1">Tại Anode (+)</p>
+                                <div class="bg-white p-2 rounded border border-slate-200 font-mono space-y-2 shadow-sm">
+                                    <p>2O<sup>2-</sup> → O<sub>2</sub> + 4e</p>
+                                    <p class="text-[11px] text-slate-400 italic border-t pt-1">Ăn mòn anode:</p>
+                                    <p>C + O<sub>2</sub> → CO<sub>2</sub></p>
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-blue-600 mb-1">Tổng quát</p>
+                                <div class="bg-blue-900 text-white p-3 rounded font-mono text-[11px] shadow-md leading-relaxed">
+                                    2Al<sub>2</sub>O<sub>3</sub> + 3C → 4Al + 3CO<sub>2</sub>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+
+            <!-- Footer -->
+            <footer class="bg-slate-100 p-3 text-center text-[11px] text-slate-500 italic border-t border-slate-200">
+                Học liệu hỗ trợ giảng dạy môn Hóa học | © 2026 Nguyễn Mạnh Hưng
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // State
+        let isRunning = false;
+        let aluminumLevel = 20; // 0 to 100
+        let isTapping = false;
+        let bubbles = [];
+        let animationFrameId;
+        let intervalId;
+
+        // Elements
+        const alLayer = document.getElementById('aluminum-layer');
+        const electrolyteLayer = document.getElementById('electrolyte-layer');
+        const bubblesContainer = document.getElementById('bubbles-container');
+        const anodesGroup = document.getElementById('anodes-group');
+        const statusOverlay = document.getElementById('status-overlay');
+        const btnToggle = document.getElementById('btn-toggle');
+        const btnToggleText = document.getElementById('btn-toggle-text');
+        const btnToggleIcon = document.getElementById('btn-toggle-icon');
+        const btnTap = document.getElementById('btn-tap');
+        const btnReset = document.getElementById('btn-reset');
+        const drainStream = document.getElementById('drain-stream');
+        const sparks = document.getElementById('sparks');
+
+        // Initialize Anodes
+        const anodePositions = [220, 280, 340, 400, 460, 520, 580];
+        anodePositions.forEach(x => {
+            const g = document.createElementNS("http://www.w3.org/2000/svg", "g");
+            const connection = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            connection.setAttribute("x", x - 2);
+            connection.setAttribute("y", "55");
+            connection.setAttribute("width", "4");
+            connection.setAttribute("height", "45");
+            connection.setAttribute("fill", "#2dd4bf");
+            
+            const block = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+            block.setAttribute("x", x - 15);
+            block.setAttribute("y", "100");
+            block.setAttribute("width", "30");
+            block.setAttribute("height", "100");
+            block.setAttribute("fill", "#1e293b");
+            
+            g.appendChild(connection);
+            g.appendChild(block);
+            anodesGroup.appendChild(g);
+        });
+
+        function updateSimulation() {
+            // Update Layers
+            const alHeight = aluminumLevel * 2.5;
+            alLayer.setAttribute("y", 340 - alHeight);
+            alLayer.setAttribute("height", alHeight);
+            
+            electrolyteLayer.setAttribute("height", 240 - alHeight);
+
+            // Update Bubbles UI
+            bubblesContainer.innerHTML = '';
+            bubbles.forEach(b => {
+                const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                circle.setAttribute("cx", b.x);
+                circle.setAttribute("cy", b.y);
+                circle.setAttribute("r", b.size);
+                circle.setAttribute("fill", "#fff");
+                circle.setAttribute("fill-opacity", b.opacity);
+                bubblesContainer.appendChild(circle);
+            });
+
+            btnTap.disabled = aluminumLevel < 20 || isTapping;
+        }
+
+        function animateBubbles() {
+            if (isRunning) {
+                // Move existing bubbles
+                bubbles = bubbles.map(b => ({
+                    ...b,
+                    y: b.y - b.speed,
+                    opacity: b.opacity - 0.01
+                })).filter(b => b.y > 100 && b.opacity > 0);
+
+                // Add new bubbles
+                if (Math.random() > 0.5) {
+                    for (let i = 0; i < 3; i++) {
+                        bubbles.push({
+                            id: Math.random(),
+                            x: 180 + Math.random() * 440,
+                            y: 185,
+                            size: 2 + Math.random() * 4,
+                            speed: 0.5 + Math.random() * 1.5,
+                            opacity: 1
+                        });
+                    }
+                }
+                
+                // Slowly increase Al level
+                if (aluminumLevel < 55) {
+                    aluminumLevel += 0.05;
+                }
+            }
+            updateSimulation();
+            animationFrameId = requestAnimationFrame(animateBubbles);
+        }
+
+        btnToggle.onclick = () => {
+            isRunning = !isRunning;
+            if (isRunning) {
+                btnToggle.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+                btnToggle.classList.add('bg-red-50', 'text-red-600', 'border', 'border-red-200');
+                btnToggleText.innerText = "Dừng Điện Phân";
+                btnToggleIcon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`;
+                statusOverlay.classList.remove('hidden');
+                statusOverlay.classList.add('flex');
+                sparks.classList.remove('hidden');
+            } else {
+                btnToggle.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+                btnToggle.classList.remove('bg-red-50', 'text-red-600', 'border', 'border-red-200');
+                btnToggleText.innerText = "Bắt Đầu Điện Phân";
+                btnToggleIcon.innerHTML = `▶`;
+                statusOverlay.classList.add('hidden');
+                statusOverlay.classList.remove('flex');
+                sparks.classList.add('hidden');
+            }
+        };
+
+        btnTap.onclick = () => {
+            if (aluminumLevel > 15 && !isTapping) {
+                isTapping = true;
+                drainStream.classList.remove('hidden');
+                
+                const tapInterval = setInterval(() => {
+                    if (aluminumLevel <= 15) {
+                        clearInterval(tapInterval);
+                        isTapping = false;
+                        drainStream.classList.add('hidden');
+                        aluminumLevel = 15;
+                    } else {
+                        aluminumLevel -= 0.5;
+                    }
+                    updateSimulation();
+                }, 50);
+            }
+        };
+
+        btnReset.onclick = () => {
+            isRunning = false;
+            aluminumLevel = 20;
+            bubbles = [];
+            isTapping = false;
+            drainStream.classList.add('hidden');
+            sparks.classList.add('hidden');
+            statusOverlay.classList.add('hidden');
+            btnToggle.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+            btnToggleText.innerText = "Bắt Đầu Điện Phân";
+            btnToggleIcon.innerHTML = `▶`;
+            updateSimulation();
+        };
+
+        // Start animation loop
+        updateSimulation();
+        animateBubbles();
+
+    </script>
+</body>
+</html>
